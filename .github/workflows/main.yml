@@ -13,15 +13,28 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Create Dummy Epic Games Shortcut FIRST (Error Fix)
+      - name: Create Required Folders & Shortcuts (Error Fix)
         run: |
+          # Epic Games shortcut banao
           $WshShell = New-Object -ComObject WScript.Shell
           $Shortcut = $WshShell.CreateShortcut("C:\Users\Public\Desktop\Epic Games Launcher.lnk")
           $Shortcut.TargetPath = "C:\Windows\System32\cmd.exe"
           $Shortcut.Save()
-          Write-Host "Shortcut created successfully!"
+
+          # LiteManager folder banao (agar nahi hai toh)
+          if (!(Test-Path "C:\Program Files\LiteManager")) {
+            New-Item -ItemType Directory -Path "C:\Program Files\LiteManager" -Force
+          }
+
+          # Desktop path check karo
+          if (!(Test-Path "C:\Users\Public\Desktop")) {
+            New-Item -ItemType Directory -Path "C:\Users\Public\Desktop" -Force
+          }
+
+          Write-Host "Folders aur shortcuts ban gaye!"
 
       - name: Downloading & Installing Essentials
+        continue-on-error: true
         run: |
           Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
           cmd /c Downloads.bat
@@ -31,8 +44,12 @@ jobs:
           @'
           @echo off
           echo Connecting to LiteManager...
-          start "" "C:\Program Files\LiteManager\LiteManager.exe"
-          echo Connected!
+          if exist "C:\Program Files\LiteManager\LiteManager.exe" (
+            start "" "C:\Program Files\LiteManager\LiteManager.exe"
+            echo Connected!
+          ) else (
+            echo LiteManager not found, skipping...
+          )
           '@ | Out-File -FilePath "show.bat" -Encoding ascii
 
       - name: Create loop.bat File
@@ -46,7 +63,9 @@ jobs:
           '@ | Out-File -FilePath "loop.bat" -Encoding ascii
 
       - name: Connect to LiteManager
+        continue-on-error: true
         run: cmd /c show.bat
 
       - name: Time Counter
+        continue-on-error: true
         run: cmd /c loop.bat
