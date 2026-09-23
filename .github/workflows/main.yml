@@ -10,14 +10,42 @@ jobs:
     timeout-minutes: 9999
 
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Downloading & Installing Essentials
         run: |
           Invoke-WebRequest -Uri "https://gitlab.com/chamod12/lm_win-10_github_rdp/-/raw/main/Downloads.bat" -OutFile "Downloads.bat"
           cmd /c Downloads.bat
+
+      - name: Create Dummy Epic Games Shortcut (Error Fix)
+        run: |
+          $WshShell = New-Object -ComObject WScript.Shell
+          $Shortcut = $WshShell.CreateShortcut("C:\Users\Public\Desktop\Epic Games Launcher.lnk")
+          $Shortcut.TargetPath = "C:\Windows\System32\cmd.exe"
+          $Shortcut.Save()
+
+      - name: Create show.bat File
+        run: |
+          @'
+          @echo off
+          echo Connecting to LiteManager...
+          start "" "C:\Program Files\LiteManager\LiteManager.exe"
+          echo Connected!
+          '@ | Out-File -FilePath "show.bat" -Encoding ascii
+
+      - name: Create loop.bat File
+        run: |
+          @'
+          @echo off
+          :loop
+          echo Time Counter Running...
+          timeout /t 60 /nobreak >nul
+          goto loop
+          '@ | Out-File -FilePath "loop.bat" -Encoding ascii
 
       - name: Connect to LiteManager
         run: cmd /c show.bat
 
       - name: Time Counter
         run: cmd /c loop.bat
-        
